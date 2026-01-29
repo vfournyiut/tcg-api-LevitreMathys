@@ -1,50 +1,76 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 enum PokemonType {
-  Normal
-  Fire
-  Water
-  Electric
-  Grass
-  Ice
-  Fighting
-  Poison
-  Ground
-  Flying
-  Psychic
-  Bug
-  Rock
-  Ghost
-  Dragon
-  Dark
-  Steel
-  Fairy
+    Normal
+    Fire
+    Water
+    Electric
+    Grass
+    Ice
+    Fighting
+    Poison
+    Ground
+    Flying
+    Psychic
+    Bug
+    Rock
+    Ghost
+    Dragon
+    Dark
+    Steel
+    Fairy
 }
 
 model Card {
-  id            Int         @id @default(autoincrement())
-  name          String
-  hp            Int
-  attack        Int
-  type          PokemonType
-  pokedexNumber Int
-  imgUrl        String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+    id            Int         @id @default(autoincrement())
+    name          String
+    hp            Int
+    attack        Int
+    type          PokemonType
+    pokedexNumber Int
+    imgUrl        String?
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+
+    decks DeckCard[]
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    id        Int      @id @default(autoincrement())
+    username  String   @unique
+    email     String   @unique
+    password  String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    decks Deck[]
+}
+
+model Deck {
+    id        Int      @id @default(autoincrement())
+    name      String
+    userId    Int
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    user  User       @relation(references: [id], fields: [userId])
+    cards DeckCard[]
+}
+
+model DeckCard {
+    deckId Int
+    cardId Int
+
+    id Int @id @default(autoincrement())
+
+    decks Deck @relation(fields: [deckId], references: [id])
+    cards Card @relation(fields: [cardId], references: [id])
+
 }
