@@ -26,7 +26,7 @@ async function main() {
                 username: "blue",
                 email: "blue@example.com",
                 password: hashedPassword,
-            },
+            }
         ],
     });
 
