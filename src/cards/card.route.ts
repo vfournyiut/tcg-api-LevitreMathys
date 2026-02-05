@@ -3,7 +3,7 @@ import { prisma } from '../database'
 
 export const cardRouter = Router()
 
-cardRouter.get("/cards", async (req: Request, res: Response) => {
+cardRouter.get("/cards", async (_req: Request, res: Response) => {
 
     try {
         const cards = await prisma.card.findMany()
