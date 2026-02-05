@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { Request, Response, Router } from 'express'
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { prisma } from '../database';
 
