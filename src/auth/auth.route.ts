@@ -161,31 +161,3 @@ authRouter.post('/sign-in', async (req: Request, res: Response) => {
   }
 })
 
-// authRouter.post("/delete/:email", async (req : Request, res: Response) => {
-//     const {email} = req.params
-
-//     const user = await prisma.user.findUnique({
-//         where: {email},
-//     })
-
-//     if (!user) {
-//         return res.status(404).json({error: "[ERREUR] Utilisateur introuvable"})
-//     }
-
-//     const decks = await prisma.deck.findMany({
-//         where: {userId: user.id}
-//     })
-
-//     const deckCards = await prisma.deckCard.deleteMany({
-//         where: {}
-//     })
-//     await prisma.user.delete({
-//         where: {id: user.id}
-//     })
-
-//     return res.status(200).json({
-//         message: "🎉 Utilisateur supprimé avec succès !"
-//     })
-//     prisma.deck.delete
-
-// })

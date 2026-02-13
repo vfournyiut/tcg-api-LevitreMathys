@@ -62,8 +62,11 @@ async function main() {
     ),
   )
 
-  // console.log(randomCards);
-  // console.log(createdCards)0*;
+
+
+    // console.log(randomCards);
+    // console.log(createdCards)*;
+
 
   const users = [redUser, blueUser]
   for (const user of users) {

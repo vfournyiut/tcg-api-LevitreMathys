@@ -72,5 +72,4 @@ model DeckCard {
 
     decks Deck @relation(fields: [deckId], references: [id])
     cards Card @relation(fields: [cardId], references: [id])
-
 }
