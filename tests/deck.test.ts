@@ -1,132 +1,280 @@
-
+import jwt from 'jsonwebtoken';
 import { app } from '../src/index';
-import { describe } from "node:test";
-import { expect, it } from "vitest";
-import { prismaMock } from "./vitest.setup";
+import { describe, beforeAll, beforeEach, it, expect } from 'vitest';
+import { prismaMock } from './vitest.setup';
 import request from 'supertest';
 import { PokemonType } from '../src/generated/prisma/enums';
+import { Deck, DeckCard, Card } from '../src/generated/prisma/client';
 
+let token: string;
 
-// Création utilisateur
+beforeAll(() => {
+    token = jwt.sign(
+        { userId: 1, email: 'red@example.com' },
+        process.env.JWT_SECRET as string,
+        { expiresIn: '1h' }
+    );
+});
+
+beforeEach(() => {
+    prismaMock.card.findMany.mockReset();
+    prismaMock.deck.create.mockReset();
+    prismaMock.deck.findMany.mockReset();
+    prismaMock.deck.findUnique.mockReset();
+    prismaMock.deck.update.mockReset();
+    prismaMock.deck.delete.mockReset();
+    prismaMock.deckCard.deleteMany.mockReset();
+});
+
 describe('POST /api/decks', () => {
-    // Création d'un deck => 201
-    it('should create a new deck', async () => {
+    it('creates a new deck (201)', async () => {
+        const newDeck = { name: 'My First Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
 
-        const newDeck = {
-            name: "My First Deck",
-            cards: [1, 2, 3]
-        }
+        prismaMock.card.findMany.mockResolvedValue(newDeck.cards.map(id => ({ id })));
 
         const mockedDeck = {
             id: 1,
-            name: "My First Deck",
+            name: newDeck.name,
             userId: 1,
             createdAt: new Date(),
             updatedAt: new Date(),
-            cards: [
-                {
-                    id: 1,
-                    deckId: 1,
-                    cardId: 1,
+            cards: newDeck.cards.map(id => ({
+                id,
+                deckId: 1,
+                cardId: id,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                cards: {
+                    id,
+                    name: ['Bulbasaur', 'Ivysaur', 'Venusaur', 'Charmander', 'Squirtle', 'Pikachu', 'Jigglypuff', 'Meowth', 'Psyduck', 'Snorlax'][id - 1],
+                    hp: 50 + id * 5,
+                    attack: 50 + id * 4,
+                    type: PokemonType.Grass,
+                    pokedexNumber: id,
+                    imgUrl: 'https://example.com/pokemon.png',
                     createdAt: new Date(),
-                    updatedAt: new Date(),
-                    cards: {
-                        id: 1,
-                        name: "Bulbasaur",
-                        hp: 45,
-                        attack: 49,
-                        type: PokemonType.Grass,
-                        pokedexNumber: 1,
-                        imgUrl: "https://example.com/bulbasaur.png",
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                },
-                {
-                    id: 2,
-                    deckId: 1,
-                    cardId: 2,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    cards: {
-                        id: 2,
-                        name: "Ivysaur",
-                        hp: 60,
-                        attack: 62,
-                        type: PokemonType.Grass,
-                        pokedexNumber: 2,
-                        imgUrl: "https://example.com/ivysaur.png",
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    }
-                },
-                {
-                    id: 3,
-                    deckId: 1,
-                    cardId: 3,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    cards: {
-                        id: 3,
-                        name: "Venusaur",
-                        hp: 80,
-                        attack: 82,
-                        type: PokemonType.Grass,
-                        pokedexNumber: 3,
-                        imgUrl: "https://example.com/venusaur.png",
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    }
+                    updatedAt: new Date()
                 }
-            ]
-        }
+            }))
+        };
 
-        prismaMock.deck.create.mockResolvedValue(mockedDeck)
+        prismaMock.deck.create.mockResolvedValue(mockedDeck as Deck);
 
-        const response = await request(app)
+        const res = await request(app)
             .post('/api/decks')
-            .send(newDeck)
+            .set('Authorization', `Bearer ${token}`)
+            .send(newDeck);
 
-        expect(response.status).toBe(201)
-        expect(response.body).toHaveProperty('deck')
-        expect(response.body.deck).toHaveProperty('name', 'My First Deck')
-        expect(response.body.deck.cards).toHaveLength(3)
-        expect(response.body.deck.cards[0].cards).toHaveProperty('name', 'Bulbasaur')
-        expect(response.body.deck.cards[1].cards).toHaveProperty('name', 'Ivysaur')
-        expect(response.body.deck.cards[2].cards).toHaveProperty('name', 'Venusaur')
-    })
+        expect(res.status).toBe(201);
+        expect(res.body).toHaveProperty('deck');
+        expect(res.body.deck).toHaveProperty('name', newDeck.name);
+        expect(res.body.deck.cards).toHaveLength(10);
+    });
 
-    // Erreur de liste de cartes => 400
-    it('should return 400 if cards is not an array', async () => {
-
-        const newDeck = {
-            name: "My First Deck",
-            cards: "not an array"
-        }
-
-        const response = await request(app)
+    it('returns 400 when cards is not an array', async () => {
+        const res = await request(app)
             .post('/api/decks')
-            .send(newDeck)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'Bad', cards: 'not-an-array' });
 
-        expect(response.status).toBe(400)
-        expect(response.body).toHaveProperty('error', 'La liste de cartes est invalide')
-    })
+        expect(res.status).toBe(400);
+        expect(res.body).toHaveProperty('error', 'La liste de cartes est invalide');
+    });
 
-    // Erreur côté serveur => 500
-    it('should return 500 if there is a server error', async () => {
-
-        const newDeck = {
-            name: "My First Deck",
-            cards: [1, 2, 3]
-        }
-
-        prismaMock.deck.create.mockRejectedValue(new Error('Database error'))
-
-        const response = await request(app)
+    it('returns 400 when name missing or cards length !== 10', async () => {
+        const res = await request(app)
             .post('/api/decks')
-            .send(newDeck)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: '', cards: [1, 2, 3] });
 
-        expect(response.status).toBe(500)
-        expect(response.body).toHaveProperty('error', "[ERREUR] Erreur serveur:Error: Database error")
-    })
-})
+        expect(res.status).toBe(400);
+        expect(res.body).toHaveProperty('error', 'Informations manquantes ou invalides');
+    });
+
+    it('returns 400 when some cards do not exist', async () => {
+        const newDeck = { name: 'Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
+        prismaMock.card.findMany.mockResolvedValue(newDeck.cards.slice(0, 9).map(id => ({ id })));
+
+        const res = await request(app)
+            .post('/api/decks')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newDeck);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toHaveProperty('error', 'Une ou plusieurs cartes sont invalides ou inexistantes');
+    });
+
+    it('returns 401 when unauthenticated', async () => {
+        const res = await request(app)
+            .post('/api/decks')
+            .send({ name: 'Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+
+        expect(res.status).toBe(401);
+    });
+
+    it('returns 500 on server error', async () => {
+        const newDeck = { name: 'Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
+        prismaMock.card.findMany.mockResolvedValue(newDeck.cards.map(id => ({ id })));
+        prismaMock.deck.create.mockImplementation(() => { throw new Error('DB failure'); });
+
+        const res = await request(app)
+            .post('/api/decks')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newDeck);
+
+        expect(res.status).toBe(500);
+        expect(res.body).toHaveProperty('error');
+    });
+});
+
+describe('GET /api/decks/mine', () => {
+    it('returns user decks (200)', async () => {
+        const mockedDecks = [
+            { id: 1, name: 'D1', userId: 1, createdAt: new Date(), updatedAt: new Date(), cards: [] }
+        ];
+
+        prismaMock.deck.findMany.mockResolvedValue(mockedDecks as Deck[]);
+
+        const res = await request(app)
+            .get('/api/decks/mine')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('deck');
+    });
+
+    it('returns 500 on server error', async () => {
+        prismaMock.deck.findMany.mockImplementation(() => { throw new Error('DB'); });
+
+        const res = await request(app)
+            .get('/api/decks/mine')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(500);
+        expect(res.body).toHaveProperty('error');
+    });
+});
+
+describe('GET /api/decks/:id', () => {
+    it('returns deck when exists and owned (200)', async () => {
+        const deck = { id: 1, name: 'D1', userId: 1, cards: [], createdAt: new Date(), updatedAt: new Date() };
+        prismaMock.deck.findUnique.mockResolvedValue(deck as Deck);
+
+        const res = await request(app)
+            .get('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('deck');
+    });
+
+    it('returns 404 if not found', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue(null);
+
+        const res = await request(app)
+            .get('/api/decks/999')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(404);
+        expect(res.body).toHaveProperty('error', '[ERREUR] Deck introuvable');
+    });
+
+    it('returns 403 if not owner', async () => {
+        const deck = { id: 2, name: 'D2', userId: 2, cards: [], createdAt: new Date(), updatedAt: new Date() };
+        prismaMock.deck.findUnique.mockResolvedValue(deck as Deck);
+
+        const res = await request(app)
+            .get('/api/decks/2')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(403);
+        expect(res.body).toHaveProperty('error', '[ERREUR] Accès interdit à ce deck');
+    });
+});
+
+describe('PATCH /api/decks/:id', () => {
+    it('updates deck and returns 200', async () => {
+        const deck = { id: 1, name: 'Old', userId: 1 };
+        prismaMock.deck.findUnique.mockResolvedValue(deck as Deck);
+        prismaMock.card.findMany.mockResolvedValue([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => ({ id })) as Card[]);
+        const updated = { id: 1, name: 'New', userId: 1, cards: [], createdAt: new Date(), updatedAt: new Date() };
+        prismaMock.deck.update.mockResolvedValue(updated as Deck);
+
+        const res = await request(app)
+            .patch('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'New', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('id', 1);
+    });
+
+    it('returns 404 if deck not found', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue(null);
+
+        const res = await request(app)
+            .patch('/api/decks/999')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'New', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+
+        expect(res.status).toBe(404);
+        expect(res.body).toHaveProperty('error', '[ERREUR] Deck introuvable');
+    });
+
+    it('returns 403 if not owner', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue({ id: 2, name: 'Deck', userId: 2, createdAt: new Date(), updatedAt: new Date(), cards: [] } as Deck);
+
+        const res = await request(app)
+            .patch('/api/decks/2')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'New', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+
+        expect(res.status).toBe(403);
+    });
+
+    it('returns 400 if cards invalid', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue({ id: 1, userId: 1 } as any);
+
+        const res = await request(app)
+            .patch('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ cards: [1, 2] });
+
+        expect(res.status).toBe(400);
+    });
+});
+
+describe('DELETE /api/decks/:id', () => {
+    it('deletes deck and returns 200', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue({ id: 1, name: 'Deck', userId: 1, createdAt: new Date(), updatedAt: new Date(), cards: [] } as Deck);
+        prismaMock.deckCard.deleteMany.mockResolvedValue({ count: 0 });
+        prismaMock.deck.delete.mockResolvedValue({ id: 1, name: 'Deck', userId: 1, createdAt: new Date(), updatedAt: new Date(), cards: [] } as Deck);
+
+        const res = await request(app)
+            .delete('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body).toHaveProperty('message', 'Deck supprimé avec succès');
+    });
+
+    it('returns 404 if deck not found', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue(null);
+
+        const res = await request(app)
+            .delete('/api/decks/999')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(404);
+    });
+
+    it('returns 403 if not owner', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue({ id: 2, name: 'Deck', userId: 2, createdAt: new Date(), updatedAt: new Date(), cards: [] } as Deck);
+
+        const res = await request(app)
+            .delete('/api/decks/2')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(res.status).toBe(403);
+    });
+});
