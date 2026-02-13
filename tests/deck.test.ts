@@ -87,7 +87,7 @@ describe('POST /api/decks', () => {
             .post('/api/decks')
             .send(newDeck)
 
-        expect(response.status).toBe(200)
+        expect(response.status).toBe(201)
         expect(response.body).toHaveProperty('deck')
         expect(response.body.deck).toHaveProperty('name', 'My First Deck')
         expect(response.body.deck.cards).toHaveLength(3)
@@ -96,7 +96,21 @@ describe('POST /api/decks', () => {
         expect(response.body.deck.cards[2].cards).toHaveProperty('name', 'Venusaur')
     })
 
-    // Erreur de 
+    // Erreur de liste de cartes => 400
+    it('should return 400 if cards is not an array', async () => {
+
+        const newDeck = {
+            name: "My First Deck",
+            cards: "not an array"
+        }
+
+        const response = await request(app)
+            .post('/api/decks')
+            .send(newDeck)
+
+        expect(response.status).toBe(400)
+        expect(response.body).toHaveProperty('error', 'La liste de cartes est invalide')
+    })
 
     // Erreur côté serveur => 500
     it('should return 500 if there is a server error', async () => {
