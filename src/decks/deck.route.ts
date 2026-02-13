@@ -5,6 +5,16 @@ import { prisma } from "../database";
 
 export const deckRouter = Router();
 
+/**
+ * @async
+ * @function createDeck
+ * @param  {Request} req - Requête entrante
+ * @param {Response} res - Réponse sortante
+ * @returns - Création d'un deck en vérifiant les données entrées, l'existence des cartes, de l'utilisateur connecté.
+ * @throws - 400 si les données sont manquantes ou invalides,
+ *           401 si l'utilisateur n'est pas authentifié, 
+ *           500 en cas d'erreur serveur.
+ */
 deckRouter.post("/", authenticateToken, async (req: Request, res: Response) => {
     const { name, cards } = req.body;
 
@@ -72,6 +82,17 @@ deckRouter.post("/", authenticateToken, async (req: Request, res: Response) => {
 })
 
 
+/**
+ * @async
+ * @function getMyDecks
+ * @param  {Request} req - Requête entrante
+ * @param {Response} res - Réponse sortante
+ * @returns - Decks de l'utilisateur connecté, 
+ *            avec les cartes associées, 
+ *           
+ * @throws - 401 si l'utilisateur n'est pas authentifié, 
+ *           500 en cas d'erreur serveur.
+ */
 deckRouter.get("/mine", authenticateToken, async (req: Request, res: Response) => {
 
     try {
@@ -97,6 +118,20 @@ deckRouter.get("/mine", authenticateToken, async (req: Request, res: Response) =
 })
 
 
+/**
+ * @async
+ * @function getDeckById
+ * @param  {Request} req - Requête entrante
+ * @param {Response} res - Réponse sortante
+ * @returns - Deck, spécifique par son id, 
+ *            de l'utilisateur connecté, 
+ *            avec les cartes associées, 
+ *            et les retourner dans la réponse.
+ * @throws - 401 si l'utilisateur n'est pas authentifié, 
+ *           403 si l'accès est interdit,
+ *           404 si le deck n'existe pas, 
+ *           500 en cas d'erreur serveur.
+ */
 deckRouter.get('/:id', authenticateToken, async (req: Request, res: Response) => {
     const { id } = req.params
 
@@ -139,6 +174,20 @@ deckRouter.get('/:id', authenticateToken, async (req: Request, res: Response) =>
 
 
 
+/**
+ * 
+ * @async
+ * @function updateDeck
+ * @param {Request}req - Requête entrante
+ * @param {Response} res - Réponse sortante
+ * @returns - Deck spécifique modifié de l'utilisateur connecté, 
+*            avec les cartes associées, 
+ * @throws - 400 si les données sont manquantes ou invalides,
+ *           401 si l'utilisateur n'est pas authentifié,
+ *           403 si l'accès est interdit,
+ *           404 si le deck n'existe pas, 
+ *           500 en cas d'erreur serveur.
+ */
 deckRouter.patch("/:id", authenticateToken, async (req: Request, res: Response) => {
 
     const deckId = Number(req.params.id)
@@ -237,6 +286,19 @@ deckRouter.patch("/:id", authenticateToken, async (req: Request, res: Response) 
     }
 })
 
+
+/**
+ * @async 
+ * @function deleteDeck
+ * @param {Request} req - Requête entrante
+ * @param {Response} res - Réponse sortante
+ * @returns - Suppression d'un deck spécifique de l'utilisateur connecté, 
+ *            avec les cartes associées
+ * @throws - 401 si l'utilisateur n'est pas authentifié, 
+ *           403 si l'accès est interdit,
+ *           404 si le deck n'existe pas, 
+ *           500 en cas d'erreur serveur.
+ */
 deckRouter.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
 
     const deckId = Number(req.params.id)

@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
+/**
+ Extension de l'interface Request pour inclure les informations de l'utilisateur 
+ */
 declare global {
   namespace Express {
     interface Request {
@@ -11,6 +14,15 @@ declare global {
     }
   }
 }
+
+/**
+ * 
+ * @param req - Requête entrante 
+ * @param res - Réponse sortante
+ * @param next - Passer au prochain middleware ou à la route
+ * @returns - Middleware afin d'authentifier les requêtes en vérifiant le token JWT dans le header Authorization pour les routes suivantes protégées.
+ * @throws - 401 si le token est manquant, invalide ou expiré.
+ */
 
 export const authenticateToken = (
   req: Request,
