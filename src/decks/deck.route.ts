@@ -1,4 +1,8 @@
+import 'dotenv/config';
+import { Request, Response } from 'express'
 import { Router } from "express";
+import { authenticateToken } from "../auth/auth.middleware";
+import { prisma } from "../database";
 
 
 export const deckRouter = Router();

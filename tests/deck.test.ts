@@ -5,7 +5,6 @@ import { expect, it } from "vitest";
 import { prismaMock } from "./vitest.setup";
 import request from 'supertest';
 import { PokemonType } from '../src/generated/prisma/enums';
-import { Card } from '../src/generated/prisma/client';
 
 
 // Création utilisateur
