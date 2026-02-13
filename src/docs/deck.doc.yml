@@ -1,0 +1,335 @@
+paths:
+  /api/decks:
+    post:
+      tags:
+        - Decks
+      summary: Création d'un deck
+      description: Crée un nouveau deck à partir d'une liste de cartes pour l'utilisateur connecté.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - cards
+              properties:
+                name:
+                  type: string
+                  example: "Deck de Pikachu"
+                cards:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+              
+      responses:
+        '201':
+          description: Deck créé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Deck créé avec succès !"
+                  deck:
+                    $ref: '#/components/schemas/Deck'
+
+        '400':
+          description: Liste de cartes invalide
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "La liste de cartes est invalide"
+                $ref: '#/components/schemas/Error'
+                
+        '400':
+          description: Cartes invalides ou inexistantes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Une ou plusieurs cartes sont invalides ou inexistantes"
+                $ref: '#/components/schemas/Error'
+                
+        '401':
+          description: Utilisateur non authentifié
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Utilisateur non authentifié"
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "❗Erreur serveur"
+                $ref: '#/components/schemas/Error'
+
+
+paths:
+  /api/decks/mine:
+    get:
+      tags:
+        - Decks
+      summary: Récupère mes decks
+      description: Récupère tous les decks de l'utilisateur connecté.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des decks récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deck:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Deck'
+      
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "❗Erreur serveur"
+                $ref: '#/components/schemas/Error'
+
+
+  /api/decks/{id}:
+    get:
+      tags:
+        - Decks
+      summary: Récupère un deck par ID
+      description: Récupère un deck spécifique par son ID pour l'utilisateur connecté.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Deck récupéré avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deck:
+                    $ref: '#/components/schemas/Deck'
+        
+        '403':
+          description: Accès interdit au deck
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "[ERREUR] Accès interdit à ce deck"
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "[ERREUR] Deck introuvable"
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "❗Erreur serveur"
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags:
+        - Decks
+      summary: Met à jour un deck par ID
+      description: Met à jour un deck spécifique (nom et/ou cartes) pour l'utilisateur connecté.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Nouveau nom du deck"
+                cards:
+                  type: array
+                  items:
+                    type: integer
+                  example: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      responses:
+        '200':
+          description: Deck mis à jour avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  userId:
+                    type: integer
+                  cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+        
+        '403':
+          description: Accès interdit au deck
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Accès interdit à ce deck"
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "[ERREUR] Deck introuvable"
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "❗Erreur serveur"
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Decks
+      summary: Supprime un deck par ID
+      description: Supprime un deck spécifique par son ID pour l'utilisateur connecté.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Deck supprimé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Deck supprimé avec succès"
+        
+        '403':
+          description: Accès interdit au deck
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "[ERREUR] Accès interdit à ce deck"
+                $ref: '#/components/schemas/Error'
+
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "[ERREUR] Deck introuvable"
+                $ref: '#/components/schemas/Error'
+
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "❗Erreur serveur"
+                $ref: '#/components/schemas/Error'
+
+

@@ -1,0 +1,33 @@
+paths:
+  /api/cards:
+    get:
+      tags:
+        - Cards
+      summary: Liste toutes les cartes
+      description: Liste complète des cartes Pokemon triées par numéro de Pokédex.
+      responses:
+        '200':
+          description: Liste des cartes récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Card'
+                
+        '500':
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "❗Erreur serveur"
+                $ref: '#/components/schemas/Error'
+
+
