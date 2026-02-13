@@ -1,8 +1,5 @@
-import { Router } from "express";
+import { Router } from 'express'
 
+export const deckRouter = Router()
 
-export const deckRouter = Router();
-
-deckRouter.post("/", async (req: Request, res: Response) => {
-    
-})
+deckRouter.post('/', async (_req: Request, _res: Response) => { })
