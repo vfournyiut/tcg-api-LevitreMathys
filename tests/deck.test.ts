@@ -190,23 +190,35 @@ describe('GET /api/decks/:id', () => {
         expect(res.status).toBe(403);
         expect(res.body).toHaveProperty('error', '[ERREUR] Accès interdit à ce deck');
     });
+
+    it('returns 500 on server error', async () => {
+        prismaMock.deck.findUnique.mockImplementation(() => { throw new Error('DB') })
+
+        const res = await request(app)
+            .get('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`)
+
+        expect(res.status).toBe(500)
+        expect(res.body).toHaveProperty('error')
+    })
 });
 
 describe('PATCH /api/decks/:id', () => {
     it('updates deck and returns 200', async () => {
-        const deck = { id: 1, name: 'Old', userId: 1 };
-        prismaMock.deck.findUnique.mockResolvedValue(deck as Deck);
-        prismaMock.card.findMany.mockResolvedValue([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(id => ({ id })) as Card[]);
-        const updated = { id: 1, name: 'New', userId: 1, cards: [], createdAt: new Date(), updatedAt: new Date() };
-        prismaMock.deck.update.mockResolvedValue(updated as Deck);
+        const deck = { id: 1, name: 'Old', userId: 1, createdAt: new Date(), updatedAt: new Date() }
+        prismaMock.deck.findUnique.mockResolvedValue(deck as Deck)
+        prismaMock.card.findMany.mockResolvedValue([1,2,3,4,5,6,7,8,9,10].map(id => ({ id })) as Card[])
+        prismaMock.deckCard.deleteMany.mockResolvedValue({ count: 0 })
+        const updated = { id: 1, name: 'Old', userId: 1, cards: [], createdAt: new Date(), updatedAt: new Date() }
+        prismaMock.deck.update.mockResolvedValue(updated as Deck)
 
         const res = await request(app)
-            .patch('/api/decks/1')
-            .set('Authorization', `Bearer ${token}`)
-            .send({ name: 'New', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+        .patch('/api/decks/1')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ cards: [1,2,3,4,5,6,7,8,9,10] })  
 
-        expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('id', 1);
+        expect(res.status).toBe(200)
+        expect(res.body).toHaveProperty('name', 'Old')
     });
 
     it('returns 404 if deck not found', async () => {
@@ -233,15 +245,42 @@ describe('PATCH /api/decks/:id', () => {
     });
 
     it('returns 400 if cards invalid', async () => {
-        prismaMock.deck.findUnique.mockResolvedValue({ id: 1, userId: 1 } as any);
+        prismaMock.deck.findUnique.mockResolvedValue({ id: 1, userId: 1 } as any)
+        prismaMock.card.findMany.mockResolvedValue([1, 2, 3].map(id => ({ id })) as Card[])
 
         const res = await request(app)
             .patch('/api/decks/1')
             .set('Authorization', `Bearer ${token}`)
-            .send({ cards: [1, 2] });
+            .send({ name: 'Deck', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] })
 
-        expect(res.status).toBe(400);
+        expect(res.status).toBe(400)
+        expect(res.body).toHaveProperty('error', 'Une ou plusieurs cartes sont invalides ou inexistantes')
     });
+
+    it('returns 400 if cards array wrong length', async () => {
+        prismaMock.deck.findUnique.mockResolvedValue({ id: 1, userId: 1 } as any)
+
+        const res = await request(app)
+            .patch('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'Deck', cards: [1, 2, 3] })  // array mais seulement 3 cartes
+
+        expect(res.status).toBe(400)
+        expect(res.body).toHaveProperty('error', 'Le deck doit contenir exactement 10 cartes')
+    })
+
+    it('returns 500 on server error', async () => {
+        prismaMock.deck.findUnique.mockImplementation(() => { throw new Error('DB') })
+
+        const res = await request(app)
+            .patch('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'New', cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] })
+
+        expect(res.status).toBe(500)
+        expect(res.body).toHaveProperty('error', '[ERREUR] Erreur serveur')
+    })
+
 });
 
 describe('DELETE /api/decks/:id', () => {
@@ -277,4 +316,14 @@ describe('DELETE /api/decks/:id', () => {
 
         expect(res.status).toBe(403);
     });
+    it('returns 500 on server error', async () => {
+        prismaMock.deck.findUnique.mockImplementation(() => { throw new Error('DB') })
+
+        const res = await request(app)
+            .delete('/api/decks/1')
+            .set('Authorization', `Bearer ${token}`)
+
+        expect(res.status).toBe(500)
+        expect(res.body).toHaveProperty('error', '[ERREUR] Erreur serveur')
+    })
 });

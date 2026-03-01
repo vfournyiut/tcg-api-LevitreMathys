@@ -157,12 +157,12 @@ describe('POST /api/auth/sign-in', () => {
     it('should return 500 if there is a server error', async () => {
 
         // Simule une erreur côté serveur
-        prismaMock.user.create.mockImplementation(() => {
+        prismaMock.user.findUnique.mockImplementation(() => {
             throw new Error('Unexpected server error');
         });
 
         const response = await request(app)
-            .post('/api/auth/sign-up')
+            .post('/api/auth/sign-in')
             .send({
                 username: 'usertest',
                 email: 'usertest@example.com',
@@ -171,7 +171,7 @@ describe('POST /api/auth/sign-in', () => {
 
         expect(response.status).toBe(500);
         expect(response.body).toHaveProperty('error');
-        expect(response.body.error).toBe('❗Erreur serveur');
+        expect(response.body.error).toBe('[ERREUR] Erreur serveur');
     });
 
 })

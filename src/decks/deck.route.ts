@@ -40,17 +40,12 @@ deckRouter.post("/", authenticateToken, async (req: Request, res: Response) => {
     }
 
     try {
-        // verification de l'existance de l'utilisateur (pour éviter une erreur TypeScript)
-        if (!req.user) {
-            return res.status(401).json({
-                error: "Utilisateur non authentifié."
-            })
-        }
+       
 
         const deck = await prisma.deck.create({
             data: {
                 name: `${name}`,
-                userId: req.user.userId, // association avec l'utilisateur connecté
+                userId: req.user!.userId, // association avec l'utilisateur connecté
                 cards: {
                     create: cards.map((cardId: number) => ({
                         cardId
@@ -68,7 +63,7 @@ deckRouter.post("/", authenticateToken, async (req: Request, res: Response) => {
         // Retourne une erreur côté serveur (500)
         console.error('❗[ERROR] Connexion non établie');
         return res.status(500).json({
-            error: "[ERREUR] Erreur serveur:" + error
+            error: "[ERREUR] Erreur serveur"
         });
     };
 })
@@ -95,7 +90,7 @@ deckRouter.get("/mine", authenticateToken, async (req: Request, res: Response) =
         })
     } catch (error) {
         return res.status(500).json({
-            error: "[ERREUR] Erreur serveur:" + error
+            error: "[ERREUR] Erreur serveur"
         })
     }
 })
@@ -136,7 +131,7 @@ deckRouter.get('/:id', authenticateToken, async (req: Request, res: Response) =>
         })
     } catch (error) {
         return res.status(500).json({
-            error: "[ERREUR] Erreur serveur:" + error
+            error: "[ERREUR] Erreur serveur"
         })
     }
 })
@@ -188,40 +183,20 @@ deckRouter.patch("/:id", authenticateToken, async (req: Request, res: Response) 
             });
         }
 
-        if (cards !== undefined) {
-            if (!Array.isArray(cards) || cards.length !== 10) {
-                return res.status(400).json({
-                    error: "Le deck doit contenir exactement 10 cartes"
-                });
-            }
+      
 
-            const existingCards = await prisma.card.findMany({
-                where: { id: { in: cards } },
-                select: { id: true }
-            });
-
-            if (existingCards.length !== 10) {
-                return res.status(400).json({
-                    error: "Une ou plusieurs cartes sont invalides"
-                });
-            }
-
-            // Supprimer les anciennes cartes
-            await prisma.deckCard.deleteMany({
-                where: { deckId }
-            });
-        }
+        // Supprimer les anciennes cartes
+        await prisma.deckCard.deleteMany({
+            where: { deckId }
+        });
+    
 
         // Mise à jour du deck
         const updatedDeck = await prisma.deck.update({
             where: { id: deckId },
             data: {
                 name: name ?? deck.name,
-                cards: cards
-                    ? {
-                        create: cards.map((cardId: number) => ({ cardId }))
-                    }
-                    : undefined
+                cards: { create: cards.map((cardId: number) => ({ cardId })) }
             },
             include: {
                 cards: {
@@ -236,7 +211,7 @@ deckRouter.patch("/:id", authenticateToken, async (req: Request, res: Response) 
 
     } catch (error) {
         return res.status(500).json({
-            error: "[ERREUR] Erreur serveur:" + error
+            error: "[ERREUR] Erreur serveur"
         })
     }
 })
@@ -278,7 +253,7 @@ deckRouter.delete('/:id', authenticateToken, async (req: Request, res: Response)
 
     } catch (error) {
         return res.status(500).json({
-            error: "[ERREUR] Erreur serveur:" + error
+            error: "[ERREUR] Erreur serveur"
         })
     }
 

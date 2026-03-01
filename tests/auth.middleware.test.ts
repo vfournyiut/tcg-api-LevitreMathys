@@ -15,9 +15,11 @@ let validToken: string;
 let invalidToken: string;
 
 beforeAll(() => {
+
+    process.env.JWT_SECRET = 'test-secret';
     validToken = jwt.sign(
         { userId: 123, email: "test@example.com" },
-        process.env.JWT_SECRET as string,
+        'test-secret',
         { expiresIn: '1h' }
     );
 
