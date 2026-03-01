@@ -1,13 +1,24 @@
 import 'dotenv/config'
-import { createServer } from 'http'
-import { env } from './env'
-import express from 'express'
+
+import * as http from "node:http"
+
 import cors from 'cors'
+import express from 'express'
+import { Server } from 'socket.io'
+
 import { authRouter } from './auth/auth.route'
 import { cardRouter } from './cards/card.route'
 import { deckRouter } from './decks/deck.route'
+import { env } from './env'
+
 // Create Express app
 export const app = express()
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+    }
+})
 
 // Middlewares
 app.use(
@@ -31,14 +42,34 @@ app.use('/api/auth', authRouter)
 app.use('/api', cardRouter)
 app.use('/api/decks', deckRouter)
 
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token
+
+    if (!token) {
+        return next(new Error('Authentication error: No token provided'))
+    }
+
+    try {
+        next()
+    } catch (err) {
+        return next(new Error('Authentication error: Invalid token : ' + err))
+    }
+})
+
+io.on('connection', (socket) => {
+    console.log(`Un client s'est connecté: ${socket.id}`)
+
+    socket.on('disconnect', () => {
+        console.log(`Un client s'est déconnecté: ${socket.id}`)
+    })
+})
+
 // Start server only if this file is run directly (not imported for tests)
 if (require.main === module) {
-  // Create HTTP server
-  const httpServer = createServer(app)
 
   // Start server
   try {
-    httpServer.listen(env.PORT, () => {
+    server.listen(env.PORT, () => {
       console.log(`\n🚀 Server is running on http://localhost:${env.PORT}`)
       console.log(
         `🧪 Socket.io Test Client available at http://localhost:${env.PORT}`,
