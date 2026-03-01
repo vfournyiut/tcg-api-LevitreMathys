@@ -4,7 +4,6 @@ import * as http from "node:http"
 
 import cors from 'cors'
 import express from 'express'
-import { createServer } from 'http'
 import { Server } from 'socket.io'
 
 import { authRouter } from './auth/auth.route'
